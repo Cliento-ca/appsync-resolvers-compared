@@ -1,0 +1,11 @@
+{
+  "name": "get-item",
+  "version": "1.0.0",
+  "description": "",
+  "main": "getItem.ts",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+  }
+}

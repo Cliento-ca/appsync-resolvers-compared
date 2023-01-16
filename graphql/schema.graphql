@@ -1,0 +1,11 @@
+type Item {
+  id: ID!
+}
+
+type Query {
+  getItem:  Item! 
+}
+
+schema {
+  query: Query
+}

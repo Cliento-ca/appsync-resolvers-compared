@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: appsync-resolvers-compared
+
+Globals:
+  Function:
+    Runtime: nodejs14.x # modify the version according to your need
+    Timeout: 30
+    
+Resources:
+
+    AppSyncApi:
+        Type: AWS::AppSync::GraphQLApi
+        Properties:
+          Name: My AppSync API
+          AuthenticationType: API_KEY
+          Schema: path/to/schema.graphql
+    
+    GetItemFunctionDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+          ApiId: !GetAtt AppSyncApi.ApiId
+          Name: GetItemFunctionLambdaResolver
+          Type: AWS_LAMBDA
+          ServiceRoleArn: # !GetAtt AppSyncServiceRole.Arn
+          LambdaConfig:
+            LambdaFunctionArn: !GetAtt GetItemFunction.Arn
+    
+    GetItemFunction:
+        Type: AWS::Serverless::Function
+        Metadata: # Manage esbuild properties
+              BuildMethod: esbuild
+              BuildProperties:
+                Minify: true
+                Target: "es2020"
+                Sourcemap: true
+                External: 
+                  - 'aws-sdk'
+                EntryPoints: 
+                    - getItem.ts
+        Properties:
+          CodeUri: src/
+          Handler: app.handler
+          Runtime: nodejs18.x
+
+    AppSyncApiKey:
+        Type: AWS::AppSync::ApiKey
+        Properties:
+          ApiId: !GetAtt AppSyncApi.ApiId
+
+    ApiSchema:
+        Type: AWS::AppSync::GraphQLSchema
+        Properties:
+          ApiId: !GetAtt AppSyncApi.ApiId
+          DefinitionS3Location: graphql/schema.graphql          
+         
+    ItemsTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          TableName: items-table
+          AttributeDefinitions:
+            - AttributeName: id
+              AttributeType: S
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+        
