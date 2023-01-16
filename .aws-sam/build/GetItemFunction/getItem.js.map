@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../tmp/tmptbv1oym8/getItem.ts"],
-  "sourcesContent": ["import { DynamoDB } from 'aws-sdk';\n\nconst dynamoDb = new DynamoDB.DocumentClient();\n\nexport const handler = async (event: any) => {\n    const { id } = event;\n    const params = {\n        TableName: 'items-table',\n        Key: {\n            id: id\n        }\n    };\n\n    try {\n        const result = await dynamoDb.get(params).promise();\n        return { statusCode: 200, body: JSON.stringify(result.Item) };\n    } catch (error) {\n        return { statusCode: error.statusCode || 501, headers: { 'Content-Type': 'text/plain' }, body: 'Couldn\\'t fetch the item.' };\n    }\n};\n"],
-  "mappings": "4ZAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAyB,mBAEnBC,EAAW,IAAI,WAAS,eAEjBH,EAAU,MAAOI,GAAe,CACzC,GAAM,CAAE,GAAAC,CAAG,EAAID,EACTE,EAAS,CACX,UAAW,cACX,IAAK,CACD,GAAID,CACR,CACJ,EAEA,GAAI,CACA,IAAME,EAAS,MAAMJ,EAAS,IAAIG,CAAM,EAAE,QAAQ,EAClD,MAAO,CAAE,WAAY,IAAK,KAAM,KAAK,UAAUC,EAAO,IAAI,CAAE,CAChE,OAASC,EAAP,CACE,MAAO,CAAE,WAAYA,EAAM,YAAc,IAAK,QAAS,CAAE,eAAgB,YAAa,EAAG,KAAM,0BAA4B,CAC/H,CACJ",
-  "names": ["getItem_exports", "__export", "handler", "__toCommonJS", "import_aws_sdk", "dynamoDb", "event", "id", "params", "result", "error"]
-}
