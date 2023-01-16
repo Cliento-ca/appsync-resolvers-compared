@@ -4,17 +4,65 @@ Description: appsync-resolvers-compared
 
 Globals:
   Function:
-    Runtime: nodejs14.x # modify the version according to your need
     Timeout: 30
     
 Resources:
-
+    AppSyncServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - sts:AssumeRole
+              Principal:
+                Service:
+                  - appsync.amazonaws.com
+        Path: /
+        Policies:
+          - PolicyName: AppSyncServiceRolePolicy
+            PolicyDocument:
+              Version: 2012-10-17
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource: !GetAtt GetItemFunction.Arn
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource: !GetAtt CreateItemFunction.Arn
+                  
+    FunctionRole:
+        Type: AWS::IAM::Role
+        Properties:
+          AssumeRolePolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Principal:
+                  Service:
+                    - lambda.amazonaws.com
+          Path: /
+          Policies:
+            - PolicyName: FunctionRolePolicy
+              PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Action:
+                      - dynamodb:GetItem
+                      - dynamodb:PutItem
+                    Resource: !GetAtt ItemsTable.Arn
+                    
     AppSyncApi:
         Type: AWS::AppSync::GraphQLApi
         Properties:
           Name: My AppSync API
           AuthenticationType: API_KEY
-          Schema: path/to/schema.graphql
     
     GetItemFunctionDataSource:
         Type: AWS::AppSync::DataSource
@@ -22,27 +70,57 @@ Resources:
           ApiId: !GetAtt AppSyncApi.ApiId
           Name: GetItemFunctionLambdaResolver
           Type: AWS_LAMBDA
-          ServiceRoleArn: # !GetAtt AppSyncServiceRole.Arn
+          ServiceRoleArn:  !GetAtt AppSyncServiceRole.Arn
           LambdaConfig:
             LambdaFunctionArn: !GetAtt GetItemFunction.Arn
+    
+    CreateItemFunctionDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+          ApiId: !GetAtt AppSyncApi.ApiId
+          Name: CreateItemFunctionLambdaResolver
+          Type: AWS_LAMBDA
+          ServiceRoleArn:  !GetAtt AppSyncServiceRole.Arn
+          LambdaConfig:
+            LambdaFunctionArn: !GetAtt CreateItemFunction.Arn        
     
     GetItemFunction:
         Type: AWS::Serverless::Function
         Metadata: # Manage esbuild properties
-              BuildMethod: esbuild
-              BuildProperties:
-                Minify: true
-                Target: "es2020"
-                Sourcemap: true
-                External: 
-                  - 'aws-sdk'
-                EntryPoints: 
-                    - getItem.ts
+          BuildMethod: esbuild
+          BuildProperties:
+            Minify: true
+            Target: "es2020"
+            Sourcemap: true
+            External: 
+              - 'aws-sdk'
+            EntryPoints: 
+                - getItem.ts
         Properties:
           CodeUri: src/
           Handler: app.handler
           Runtime: nodejs18.x
-
+          Role: !GetAtt FunctionRole.Arn
+    
+    CreateItemFunction:
+        Type: AWS::Serverless::Function
+        Metadata: # Manage esbuild properties
+          BuildMethod: esbuild
+          BuildProperties:
+            Minify: true
+            Target: "es2020"
+            Sourcemap: true
+            External: 
+              - 'aws-sdk'
+            EntryPoints: 
+                - createItem.ts
+        Properties:
+          CodeUri: src/
+          Handler: app.handler
+          Runtime: nodejs18.x
+          Role: !GetAtt FunctionRole.Arn
+    
+          
     AppSyncApiKey:
         Type: AWS::AppSync::ApiKey
         Properties:
@@ -52,7 +130,7 @@ Resources:
         Type: AWS::AppSync::GraphQLSchema
         Properties:
           ApiId: !GetAtt AppSyncApi.ApiId
-          DefinitionS3Location: graphql/schema.graphql          
+          DefinitionS3Location: "graphql/schema.graphql"          
          
     ItemsTable:
         Type: AWS::DynamoDB::Table
@@ -67,4 +145,10 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
-        
+Outputs:
+  AppSyncApiGraphQLUrl:
+    Description: The URL to the Talentomatch API Endpoint
+    Value: !GetAtt AppSyncApi.GraphQLUrl
+  AppSyncApiKey:
+    Description: Talentomatch API Key
+    Value: !GetAtt AppSyncApiKey.ApiKey

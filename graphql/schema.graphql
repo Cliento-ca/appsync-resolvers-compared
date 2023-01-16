@@ -1,11 +1,21 @@
-type Item {
-  id: ID!
+type Schema {
+  query: Query
+  mutation: Mutation
 }
 
 type Query {
-  getItem:  Item! 
+  getItem(id: ID!): Item
 }
 
-schema {
-  query: Query
+type Mutation {
+  createItem(input: CreateItemInput): Item
+}
+
+type Item {
+  id: ID!
+  foo: String
+}
+
+input CreateItemInput {
+  foo: String
 }

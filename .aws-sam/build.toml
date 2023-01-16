@@ -20,4 +20,43 @@ Sourcemap = true
 External = ["aws-sdk"]
 EntryPoints = ["getItem.ts"]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[function_build_definitions.5e2bc548-b750-451c-adbf-4706fb80e0bb]
+codeuri = "/home/ec2-user/environment/appsync-resolvers-compared/src"
+runtime = "nodejs18.x"
+architecture = "x86_64"
+handler = "app.handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["CreateItemFunction"]
+
+[function_build_definitions.5e2bc548-b750-451c-adbf-4706fb80e0bb.metadata]
+BuildMethod = "esbuild"
+
+[function_build_definitions.5e2bc548-b750-451c-adbf-4706fb80e0bb.metadata.BuildProperties]
+Minify = true
+Target = "es2020"
+Sourcemap = true
+External = ["aws-sdk"]
+EntryPoints = ["createItem.ts"]
+
+
+
+
+
+
 [layer_build_definitions]
