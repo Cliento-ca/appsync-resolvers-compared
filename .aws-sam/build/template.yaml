@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: appsync-resolvers-compared
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Timeout: 30
+Resources:
+  AppSyncApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: My AppSync API
+      AuthenticationType: API_KEY
+      Schema: path/to/schema.graphql
+  GetItemFunctionDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncApi
+        - ApiId
+      Name: GetItemFunctionLambdaResolver
+      Type: AWS_LAMBDA
+      ServiceRoleArn: null
+      LambdaConfig:
+        LambdaFunctionArn:
+          Fn::GetAtt:
+          - GetItemFunction
+          - Arn
+  GetItemFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+        - getItem.ts
+        External:
+        - aws-sdk
+        Minify: true
+        Sourcemap: true
+        Target: es2020
+      SamResourceId: GetItemFunction
+    Properties:
+      CodeUri: GetItemFunction
+      Handler: app.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          NODE_OPTIONS: ' --enable-source-maps'
+  AppSyncApiKey:
+    Type: AWS::AppSync::ApiKey
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncApi
+        - ApiId
+  ApiSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncApi
+        - ApiId
+      DefinitionS3Location: ../../graphql/schema.graphql
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: items-table
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
