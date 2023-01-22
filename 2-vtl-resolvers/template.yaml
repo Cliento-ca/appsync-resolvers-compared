@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+Parameters:
+  AppSyncApiId:
+    Type: String
+    Description: AppSync Api id
+  ItemsTableName:
+    Type: String
+    Description: Items table name 
+  ItemsTableArn:
+    Type: String
+    Description: Items table ARN
+
+Resources:
+  DynamoDBRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+      Policies:
+        - PolicyName: DDBAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource: !Ref ItemsTableArn
+
+  AppSyncItemsTableDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      Name: ItemsDataSource
+      ApiId: !Ref AppSyncApiId
+      Description: "The Items Table AppSync Data Source"
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt DynamoDBRole.Arn
+      DynamoDBConfig:
+        TableName: !Ref ItemsTableName
+        AwsRegion: !Sub ${AWS::Region}
+
+  AppSyncGetItemQueryResolver:
+    Type: AWS::AppSync::Resolver
+    #DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Query
+      FieldName: getItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      RequestMappingTemplateS3Location: "./mapping-templates/Query.getItem.request.vtl"
+      ResponseMappingTemplateS3Location: "./mapping-templates/Query.getItem.response.vtl"
+
+  AppSyncCreateItemMutationResolver:
+    Type: AWS::AppSync::Resolver
+    #DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !Ref AppSyncApiId
+      TypeName: Mutation
+      FieldName: createItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      RequestMappingTemplateS3Location: "./mapping-templates/Mutation.createItem.request.vtl"
+      ResponseMappingTemplateS3Location: "./mapping-templates/Mutation.createItem.response.vtl"
+
+ 

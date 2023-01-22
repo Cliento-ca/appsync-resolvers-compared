@@ -1,7 +1,7 @@
 const APP_ROOT = '../../';
 import { get } from 'lodash';
 const viaHandler = async (event, functionName) => {
-	const handler = require(`${APP_ROOT}/lambda-resolvers/functions/${functionName}`).handler;
+	const handler = require(`${APP_ROOT}/1-lambda-resolvers/functions/${functionName}`).handler;
 
 	const context = {};
 	const response = await handler(event, context);
