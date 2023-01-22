@@ -95,13 +95,16 @@ Resources:
             External: 
               - 'aws-sdk'
             EntryPoints: 
-                - getItem.ts
+                - get-item.ts
         Properties:
-          CodeUri: src/
+          CodeUri: src/functions/
           Handler: app.handler
           Runtime: nodejs18.x
           Role: !GetAtt FunctionRole.Arn
-    
+          Environment:
+            Variables:
+                ITEMS_TABLE_NAME: !Ref ItemsTable
+
     CreateItemFunction:
         Type: AWS::Serverless::Function
         Metadata: # Manage esbuild properties
@@ -113,9 +116,9 @@ Resources:
             External: 
               - 'aws-sdk'
             EntryPoints: 
-                - createItem.ts
+                - create-item.ts
         Properties:
-          CodeUri: src/
+          CodeUri: src/functions
           Handler: app.handler
           Runtime: nodejs18.x
           Role: !GetAtt FunctionRole.Arn
@@ -130,12 +133,12 @@ Resources:
         Type: AWS::AppSync::GraphQLSchema
         Properties:
           ApiId: !GetAtt AppSyncApi.ApiId
-          DefinitionS3Location: "graphql/schema.graphql"          
+          DefinitionS3Location: "src/graphql/schema.graphql"          
          
     ItemsTable:
         Type: AWS::DynamoDB::Table
         Properties:
-          TableName: items-table
+          TableName: !Sub ${AWS::StackName}-items-table
           AttributeDefinitions:
             - AttributeName: id
               AttributeType: S
@@ -146,6 +149,8 @@ Resources:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
 Outputs:
+  ItemsTableName:
+    Value: !Ref ItemsTable
   AppSyncApiGraphQLUrl:
     Description: The URL to the Talentomatch API Endpoint
     Value: !GetAtt AppSyncApi.GraphQLUrl
