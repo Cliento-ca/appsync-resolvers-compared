@@ -9,6 +9,7 @@ export const handler = async (event: any) => {
 		TableName: tableName,
 		Item: { id: id },
 	};
+
 	try {
 		await dynamoDb.put(params).promise();
 		return { statusCode: 200, body: JSON.stringify({ message: 'Item inserted successfully' }) };
