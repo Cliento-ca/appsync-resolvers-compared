@@ -1,11 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
-
 Parameters:
-  AppSyncApiId:
-    Type: String
-    Description: AppSync Api id
   ItemsTableName:
     Type: String
     Description: Items table name 
@@ -23,6 +19,23 @@ Globals:
           ITEMS_TABLE_NAME: !Ref ItemsTableName
     
 Resources:
+    AppSyncApi:
+      Type: AWS::AppSync::GraphQLApi
+      Properties:
+        Name: Lambda Resolvers AppSync Api
+        AuthenticationType: API_KEY
+
+    AppSyncApiKey:
+      Type: AWS::AppSync::ApiKey
+      Properties:
+        ApiId: !GetAtt AppSyncApi.ApiId
+
+    ApiSchema:
+      Type: AWS::AppSync::GraphQLSchema
+      Properties:
+        ApiId: !GetAtt AppSyncApi.ApiId
+        DefinitionS3Location: "../graphql/schema.graphql" 
+
     AppSyncServiceRole:
       Type: AWS::IAM::Role
       Properties:
@@ -89,7 +102,7 @@ Resources:
     GetItemFunctionDataSource:
         Type: AWS::AppSync::DataSource
         Properties:
-          ApiId: !Ref AppSyncApiId
+          ApiId: !GetAtt AppSyncApi.ApiId
           Name: GetItemFunctionLambdaResolver
           Type: AWS_LAMBDA
           ServiceRoleArn: !GetAtt AppSyncServiceRole.Arn
@@ -99,7 +112,7 @@ Resources:
     CreateItemFunctionDataSource:
         Type: AWS::AppSync::DataSource
         Properties:
-          ApiId: !Ref AppSyncApiId
+          ApiId: !GetAtt AppSyncApi.ApiId
           Name: CreateItemFunctionLambdaResolver
           Type: AWS_LAMBDA
           ServiceRoleArn: !GetAtt AppSyncServiceRole.Arn
@@ -109,7 +122,7 @@ Resources:
     UpdateItemFunctionDataSource:
       Type: AWS::AppSync::DataSource
       Properties:
-        ApiId: !Ref AppSyncApiId
+        ApiId: !GetAtt AppSyncApi.ApiId
         Name: UpdateItemFunctionLambdaResolver
         Type: AWS_LAMBDA
         ServiceRoleArn: !GetAtt AppSyncServiceRole.Arn
@@ -119,7 +132,7 @@ Resources:
     DeleteItemFunctionDataSource:
       Type: AWS::AppSync::DataSource
       Properties:
-        ApiId: !Ref AppSyncApiId
+        ApiId: !GetAtt AppSyncApi.ApiId
         Name: DeleteItemFunctionLambdaResolver
         Type: AWS_LAMBDA
         ServiceRoleArn: !GetAtt AppSyncServiceRole.Arn
@@ -193,7 +206,7 @@ Resources:
     GetItemFunctionResolver:
       Type: AWS::AppSync::Resolver
       Properties:
-        ApiId: !Ref AppSyncApiId
+        ApiId: !GetAtt AppSyncApi.ApiId
         TypeName: Query
         FieldName: getItem
         DataSourceName: !GetAtt GetItemFunctionDataSource.Name
@@ -201,7 +214,7 @@ Resources:
     CreateItemFunctionResolver:
       Type: AWS::AppSync::Resolver
       Properties:
-        ApiId: !Ref AppSyncApiId
+        ApiId: !GetAtt AppSyncApi.ApiId
         TypeName: Mutation
         FieldName: createItem
         DataSourceName: !GetAtt CreateItemFunctionDataSource.Name   
@@ -209,7 +222,7 @@ Resources:
     DeleteItemFunctionResolver:
       Type: AWS::AppSync::Resolver
       Properties:
-        ApiId: !Ref AppSyncApiId
+        ApiId: !GetAtt AppSyncApi.ApiId
         TypeName: Mutation
         FieldName: deleteItem
         DataSourceName: !GetAtt DeleteItemFunctionDataSource.Name 
@@ -217,7 +230,15 @@ Resources:
     UpdateItemFunctionResolver:
       Type: AWS::AppSync::Resolver
       Properties:
-        ApiId: !Ref AppSyncApiId
+        ApiId: !GetAtt AppSyncApi.ApiId
         TypeName: Mutation
         FieldName: updateItem
         DataSourceName: !GetAtt UpdateItemFunctionDataSource.Name            
+
+Outputs:
+  AppSyncApiGraphQLUrl:
+    Description: The URL to the Lambda Resolvers AppSync Api Endpoint
+    Value: !GetAtt AppSyncApi.GraphQLUrl
+  AppSyncApiKey:
+    Description: Lambda Resolvers AppSync Api Key
+    Value: !GetAtt AppSyncApiKey.ApiKey

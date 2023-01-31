@@ -2,24 +2,22 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: appsync-resolvers-compared
 
-    
 Resources:
     LambdaResolvers:
        Type: AWS::Serverless::Application
        Properties:
           Location: 1-lambda-resolvers/template.yaml
           Parameters:
-            AppSyncApiId: !GetAtt AppSyncApi.ApiId
             ItemsTableName: !Ref ItemsTable
             ItemsTableArn: !GetAtt ItemsTable.Arn
-    # VTLResolvers:
-    #    Type: AWS::Serverless::Application
-    #    Properties:
-    #       Location: 2-vtl-resolvers/template.yaml
-    #       Parameters:
-    #         AppSyncApiId: !GetAtt AppSyncApi.ApiId
-    #         ItemsTableName: !Ref ItemsTable
-    #         ItemsTableArn: !GetAtt ItemsTable.Arn
+    
+    VTLResolvers:
+       Type: AWS::Serverless::Application
+       Properties:
+          Location: 2-vtl-resolvers/template.yaml
+          Parameters:
+            ItemsTableName: !Ref ItemsTable
+            ItemsTableArn: !GetAtt ItemsTable.Arn
     # JavascriptPipelineResolvers:
     #    Type: AWS::Serverless::Application
     #    Properties:
@@ -29,22 +27,7 @@ Resources:
     #         ItemsTableName: !Ref ItemsTable
     #         ItemsTableArn: !GetAtt ItemsTable.Arn                   
                     
-    AppSyncApi:
-        Type: AWS::AppSync::GraphQLApi
-        Properties:
-          Name: My AppSync API
-          AuthenticationType: API_KEY
-
-    AppSyncApiKey:
-        Type: AWS::AppSync::ApiKey
-        Properties:
-          ApiId: !GetAtt AppSyncApi.ApiId
-
-    ApiSchema:
-        Type: AWS::AppSync::GraphQLSchema
-        Properties:
-          ApiId: !GetAtt AppSyncApi.ApiId
-          DefinitionS3Location: "graphql/schema.graphql"          
+         
          
     ItemsTable:
         Type: AWS::DynamoDB::Table
@@ -63,9 +46,3 @@ Resources:
 Outputs:
   ItemsTableName:
     Value: !Ref ItemsTable
-  AppSyncApiGraphQLUrl:
-    Description: The URL to the API Endpoint
-    Value: !GetAtt AppSyncApi.GraphQLUrl
-  AppSyncApiKey:
-    Description: API Key
-    Value: !GetAtt AppSyncApiKey.ApiKey

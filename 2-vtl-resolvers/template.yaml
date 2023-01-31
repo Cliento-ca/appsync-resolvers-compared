@@ -2,9 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: "AWS::Serverless-2016-10-31"
 
 Parameters:
-  AppSyncApiId:
-    Type: String
-    Description: AppSync Api id
   ItemsTableName:
     Type: String
     Description: Items table name 
@@ -13,6 +10,23 @@ Parameters:
     Description: Items table ARN
 
 Resources:
+  AppSyncApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: VTL Resolvers AppSync Api
+      AuthenticationType: API_KEY
+
+  AppSyncApiKey:
+    Type: AWS::AppSync::ApiKey
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+
+  ApiSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      DefinitionS3Location: "../graphql/schema.graphql" 
+  
   DynamoDBRole:
     Type: AWS::IAM::Role
     Properties:
@@ -34,13 +48,15 @@ Resources:
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
                 Resource: !Ref ItemsTableArn
 
   AppSyncItemsTableDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
       Name: ItemsDataSource
-      ApiId: !Ref AppSyncApiId
+      ApiId: !GetAtt AppSyncApi.ApiId
       Description: "The Items Table AppSync Data Source"
       Type: AMAZON_DYNAMODB
       ServiceRoleArn: !GetAtt DynamoDBRole.Arn
@@ -48,26 +64,50 @@ Resources:
         TableName: !Ref ItemsTableName
         AwsRegion: !Sub ${AWS::Region}
 
-  AppSyncGetItemQueryResolver:
+  GetItemQueryResolver:
     Type: AWS::AppSync::Resolver
-    #DependsOn: AppSyncSchema
     Properties:
-      ApiId: !Ref AppSyncApiId
+      ApiId: !GetAtt AppSyncApi.ApiId
       TypeName: Query
       FieldName: getItem
       DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
       RequestMappingTemplateS3Location: "./mapping-templates/Query.getItem.request.vtl"
       ResponseMappingTemplateS3Location: "./mapping-templates/Query.getItem.response.vtl"
 
-  AppSyncCreateItemMutationResolver:
+  CreateItemMutationResolver:
     Type: AWS::AppSync::Resolver
-    #DependsOn: AppSyncSchema
     Properties:
-      ApiId: !Ref AppSyncApiId
+      ApiId: !GetAtt AppSyncApi.ApiId
       TypeName: Mutation
       FieldName: createItem
       DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
       RequestMappingTemplateS3Location: "./mapping-templates/Mutation.createItem.request.vtl"
       ResponseMappingTemplateS3Location: "./mapping-templates/Mutation.createItem.response.vtl"
 
- 
+  UpdateItemMutationResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      TypeName: Mutation
+      FieldName: updateItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      RequestMappingTemplateS3Location: "./mapping-templates/Mutation.updateItem.request.vtl"
+      ResponseMappingTemplateS3Location: "./mapping-templates/Mutation.updateItem.response.vtl"    
+
+  DeleteItemMutationResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      TypeName: Mutation
+      FieldName: deleteItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      RequestMappingTemplateS3Location: "./mapping-templates/Mutation.deleteItem.request.vtl"
+      ResponseMappingTemplateS3Location: "./mapping-templates/Mutation.deleteItem.response.vtl"
+
+Outputs:
+  AppSyncApiGraphQLUrl:
+    Description: The URL to the VTL Resolvers AppSync Api Endpoint
+    Value: !GetAtt AppSyncApi.GraphQLUrl
+  AppSyncApiKey:
+    Description: VTL Resolvers AppSync Api Key
+    Value: !GetAtt AppSyncApiKey.ApiKey

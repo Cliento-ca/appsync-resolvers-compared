@@ -1,8 +1,11 @@
- #set($id = $util.autoId())
+#set($id = $util.autoId())
 {
     "version" : "2018-05-29",
     "operation" : "PutItem",
-    "key" : {
-        "id": $util.dynamodb.toDynamoDBJson(id),
+    "key": {
+        "id": $util.dynamodb.toDynamoDBJson($id)
+    },
+    "attributeValues": {
+        "stuff": $util.dynamodb.toDynamoDBJson($context.arguments.input.stuff)
     }
 }
