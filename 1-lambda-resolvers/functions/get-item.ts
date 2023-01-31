@@ -1,24 +1,16 @@
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
 
-const dynamoDb = new DynamoDB.DocumentClient();
-const tableName = process.env.ITEMS_TABLE_NAME;
 export const handler = async (event: any) => {
-	const { id } = event;
+	const { id } = event.arguments;
 	const params = {
-		TableName: tableName,
+		TableName: process.env.ITEMS_TABLE_NAME,
 		Key: {
 			id: id,
 		},
 	};
 
-	try {
-		const result = await dynamoDb.get(params).promise();
-		return { statusCode: 200, body: JSON.stringify(result.Item) };
-	} catch (error) {
-		return {
-			statusCode: error.statusCode || 501,
-			headers: { 'Content-Type': 'text/plain' },
-			body: "Couldn't fetch the item.",
-		};
-	}
+	const client = new DynamoDBClient({});
+	const response = await client.send(new GetCommand(params));
+	return response.Item;
 };

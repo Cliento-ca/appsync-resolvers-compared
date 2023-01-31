@@ -12,14 +12,14 @@ Resources:
             AppSyncApiId: !GetAtt AppSyncApi.ApiId
             ItemsTableName: !Ref ItemsTable
             ItemsTableArn: !GetAtt ItemsTable.Arn
-    VTLResolvers:
-       Type: AWS::Serverless::Application
-       Properties:
-          Location: 2-vtl-resolvers/template.yaml
-          Parameters:
-            AppSyncApiId: !GetAtt AppSyncApi.ApiId
-            ItemsTableName: !Ref ItemsTable
-            ItemsTableArn: !GetAtt ItemsTable.Arn
+    # VTLResolvers:
+    #    Type: AWS::Serverless::Application
+    #    Properties:
+    #       Location: 2-vtl-resolvers/template.yaml
+    #       Parameters:
+    #         AppSyncApiId: !GetAtt AppSyncApi.ApiId
+    #         ItemsTableName: !Ref ItemsTable
+    #         ItemsTableArn: !GetAtt ItemsTable.Arn
     # JavascriptPipelineResolvers:
     #    Type: AWS::Serverless::Application
     #    Properties:

@@ -1,22 +1,16 @@
-import * as AWS from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
+
 import { v4 as uuidv4 } from 'uuid';
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const tableName = process.env.ITEMS_TABLE_NAME;
 export const handler = async (event: any) => {
-	const id = uuidv4();
+	const item = { id: uuidv4(), stuff: event.arguments.input.stuff };
 	const params = {
-		TableName: tableName,
-		Item: { id: id },
+		TableName: process.env.ITEMS_TABLE_NAME,
+		Item: item,
 	};
 
-	try {
-		await dynamoDb.put(params).promise();
-		return { statusCode: 200, body: JSON.stringify({ message: 'Item inserted successfully' }) };
-	} catch (error) {
-		return {
-			statusCode: 500,
-			body: JSON.stringify({ message: 'Error inserting item', error: error.message }),
-		};
-	}
+	const client = new DynamoDBClient({});
+	await client.send(new PutCommand(params));
+	return item;
 };

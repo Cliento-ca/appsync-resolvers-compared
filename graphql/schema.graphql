@@ -1,21 +1,27 @@
 type Schema {
-  query: Query
-  mutation: Mutation
+	query: Query
+	mutation: Mutation
 }
 
 type Query {
-  getItem(id: ID!): Item
+	getItem(id: ID!): Item
 }
 
 type Mutation {
-  createItem(input: CreateItemInput): Item
+	createItem(input: CreateItemInput): Item
+	deleteItem(id: ID!): Item
+	updateItem(input: UpdateItemInput): Item
 }
 
 type Item {
-  id: ID!
-  foo: String
+	id: ID
+	stuff: String
 }
 
 input CreateItemInput {
-  foo: String
+	stuff: String
+}
+input UpdateItemInput {
+	id: ID!
+	stuff: String
 }

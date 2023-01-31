@@ -18,13 +18,21 @@
 	},
 	"homepage": "https://github.com/Cliento-ca/appsync-resolvers-compared#readme",
 	"scripts": {
-		"test": "jest -c jest.config.js"
+		"test:int": "cross-env TEST_MODE=integration jest --group=integration",
+		"test:e2e": "cross-env TEST_MODE=e2e jest --group=e2e",
+		"test:all": "npm run test:int && npm run test:e2e"
 	},
 	"devDependencies": {
+		"@aws-sdk/client-dynamodb": "^3.259.0",
+		"@aws-sdk/lib-dynamodb": "^3.259.0",
 		"@types/jest": "^29.2.6",
-		"aws-sdk": "^2.1299.0",
+		"aws-appsync": "^4.1.9",
+		"cross-env": "^7.0.3",
 		"dotenv": "^16.0.3",
+		"graphql-tag": "^2.12.6",
+		"isomorphic-fetch": "^3.0.0",
 		"jest": "^29.3.1",
+		"jest-runner-groups": "^2.2.0",
 		"lodash": "^4.17.21",
 		"ts-jest": "^29.0.5"
 	},

@@ -16,6 +16,11 @@ Parameters:
 Globals:
   Function:
     Timeout: 30
+    CodeUri: functions/
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+          ITEMS_TABLE_NAME: !Ref ItemsTableName
     
 Resources:
     AppSyncServiceRole:
@@ -44,6 +49,14 @@ Resources:
                   Action:
                     - lambda:InvokeFunction
                   Resource: !GetAtt CreateItemFunction.Arn
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource: !GetAtt UpdateItemFunction.Arn  
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource: !GetAtt DeleteItemFunction.Arn     
                   
     FunctionRole:
         Type: AWS::IAM::Role
@@ -58,6 +71,8 @@ Resources:
                   Service:
                     - lambda.amazonaws.com
           Path: /
+          ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
           Policies:
             - PolicyName: FunctionRolePolicy
               PolicyDocument:
@@ -67,6 +82,8 @@ Resources:
                     Action:
                       - dynamodb:GetItem
                       - dynamodb:PutItem
+                      - dynamodb:DeleteItem
+                      - dynamodb:UpdateItem
                     Resource: !Ref ItemsTableArn
     
     GetItemFunctionDataSource:
@@ -88,10 +105,33 @@ Resources:
           ServiceRoleArn: !GetAtt AppSyncServiceRole.Arn
           LambdaConfig:
             LambdaFunctionArn: !GetAtt CreateItemFunction.Arn        
-    
+
+    UpdateItemFunctionDataSource:
+      Type: AWS::AppSync::DataSource
+      Properties:
+        ApiId: !Ref AppSyncApiId
+        Name: UpdateItemFunctionLambdaResolver
+        Type: AWS_LAMBDA
+        ServiceRoleArn: !GetAtt AppSyncServiceRole.Arn
+        LambdaConfig:
+          LambdaFunctionArn: !GetAtt UpdateItemFunction.Arn     
+
+    DeleteItemFunctionDataSource:
+      Type: AWS::AppSync::DataSource
+      Properties:
+        ApiId: !Ref AppSyncApiId
+        Name: DeleteItemFunctionLambdaResolver
+        Type: AWS_LAMBDA
+        ServiceRoleArn: !GetAtt AppSyncServiceRole.Arn
+        LambdaConfig:
+          LambdaFunctionArn: !GetAtt DeleteItemFunction.Arn     
+
     GetItemFunction:
         Type: AWS::Serverless::Function
-        Metadata: # Manage esbuild properties
+        Properties: 
+            Role: !GetAtt FunctionRole.Arn
+            Handler: get-item.handler       
+        Metadata:
           BuildMethod: esbuild
           BuildProperties:
             Minify: true
@@ -101,18 +141,13 @@ Resources:
               - 'aws-sdk'
             EntryPoints: 
                 - get-item.ts
-        Properties:
-          CodeUri: functions/
-          Handler: app.handler
-          Runtime: nodejs18.x
-          Role: !GetAtt FunctionRole.Arn
-          Environment:
-            Variables:
-                ITEMS_TABLE_NAME: !Ref ItemsTableName
 
     CreateItemFunction:
         Type: AWS::Serverless::Function
-        Metadata: # Manage esbuild properties
+        Properties: 
+          Role: !GetAtt FunctionRole.Arn
+          Handler: create-item.handler         
+        Metadata: 
           BuildMethod: esbuild
           BuildProperties:
             Minify: true
@@ -122,8 +157,67 @@ Resources:
               - 'aws-sdk'
             EntryPoints: 
                 - create-item.ts
-        Properties:
-          CodeUri: functions
-          Handler: app.handler
-          Runtime: nodejs18.x
+     
+    UpdateItemFunction:
+        Type: AWS::Serverless::Function
+        Properties: 
           Role: !GetAtt FunctionRole.Arn
+          Handler: update-item.handler    
+        Metadata: 
+          BuildMethod: esbuild
+          BuildProperties:
+            Minify: true
+            Target: "es2020"
+            Sourcemap: true
+            External: 
+              - 'aws-sdk'
+            EntryPoints: 
+                - update-item.ts
+    
+    DeleteItemFunction:
+        Type: AWS::Serverless::Function
+        Properties: 
+          Role: !GetAtt FunctionRole.Arn  
+          Handler: delete-item.handler          
+        Metadata: 
+          BuildMethod: esbuild
+          BuildProperties:
+            Minify: true
+            Target: "es2020"
+            Sourcemap: true
+            External: 
+              - 'aws-sdk'
+            EntryPoints: 
+                - delete-item.ts
+    
+    GetItemFunctionResolver:
+      Type: AWS::AppSync::Resolver
+      Properties:
+        ApiId: !Ref AppSyncApiId
+        TypeName: Query
+        FieldName: getItem
+        DataSourceName: !GetAtt GetItemFunctionDataSource.Name
+
+    CreateItemFunctionResolver:
+      Type: AWS::AppSync::Resolver
+      Properties:
+        ApiId: !Ref AppSyncApiId
+        TypeName: Mutation
+        FieldName: createItem
+        DataSourceName: !GetAtt CreateItemFunctionDataSource.Name   
+    
+    DeleteItemFunctionResolver:
+      Type: AWS::AppSync::Resolver
+      Properties:
+        ApiId: !Ref AppSyncApiId
+        TypeName: Mutation
+        FieldName: deleteItem
+        DataSourceName: !GetAtt DeleteItemFunctionDataSource.Name 
+    
+    UpdateItemFunctionResolver:
+      Type: AWS::AppSync::Resolver
+      Properties:
+        ApiId: !Ref AppSyncApiId
+        TypeName: Mutation
+        FieldName: updateItem
+        DataSourceName: !GetAtt UpdateItemFunctionDataSource.Name            

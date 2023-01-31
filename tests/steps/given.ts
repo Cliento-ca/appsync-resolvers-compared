@@ -1,16 +1,17 @@
-import * as AWS from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
+
 import { v4 as uuidv4 } from 'uuid';
 
 const an_item = async () => {
-	const dynamoDb = new AWS.DynamoDB.DocumentClient();
-	const tableName = process.env.ITEMS_TABLE_NAME;
 	const id = uuidv4();
 	const params = {
-		TableName: tableName,
+		TableName: process.env.ITEMS_TABLE_NAME,
 		Item: { id: id },
 	};
-	await dynamoDb.put(params).promise();
 
+	const client = new DynamoDBClient({});
+	await client.send(new PutCommand(params));
 	console.log(`[${id}] - item is created`);
 
 	return {
