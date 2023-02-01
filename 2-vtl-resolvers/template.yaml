@@ -57,7 +57,7 @@ Resources:
     Properties:
       Name: ItemsDataSource
       ApiId: !GetAtt AppSyncApi.ApiId
-      Description: "The Items Table AppSync Data Source"
+      Description: The Items Table AppSync Data Source
       Type: AMAZON_DYNAMODB
       ServiceRoleArn: !GetAtt DynamoDBRole.Arn
       DynamoDBConfig:

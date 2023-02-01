@@ -1,0 +1,201 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+
+Parameters:
+  ItemsTableName:
+    Type: String
+    Description: Items table name 
+  ItemsTableArn:
+    Type: String
+    Description: Items table ARN
+
+Resources:
+  AppSyncApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: Javascript Pipeline Resolvers AppSync Api
+      AuthenticationType: API_KEY
+
+  AppSyncApiKey:
+    Type: AWS::AppSync::ApiKey
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+
+  ApiSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      DefinitionS3Location: "../graphql/schema.graphql" 
+  
+  DynamoDBRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+      Policies:
+        - PolicyName: DDBAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource: !Ref ItemsTableArn
+
+  AppSyncItemsTableDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      Name: ItemsDataSource
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Description: The Items Table AppSync Data Source
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt DynamoDBRole.Arn
+      DynamoDBConfig:
+        TableName: !Ref ItemsTableName
+        AwsRegion: !Sub ${AWS::Region}
+
+  GetItemPipelineResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Kind: PIPELINE
+      TypeName: Query
+      FieldName: getItem
+      PipelineConfig:
+        Functions:
+          - !GetAtt GetItemFunction.FunctionId
+      Code: |
+        export function request(ctx) {
+          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
+          return {};
+        }
+        export function response(ctx) {
+          return ctx.prev.result;
+        }
+  GetItemFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Name: getItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      CodeS3Location: "./mapping-templates/Query.getItem.js"      
+
+  CreateItemPipelineResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Kind: PIPELINE
+      TypeName: Mutation
+      FieldName: createItem
+      PipelineConfig:
+        Functions:
+          - !GetAtt CreateItemFunction.FunctionId
+      Code: |
+        export function request(ctx) {
+          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
+          return {};
+        }
+        export function response(ctx) {
+          return ctx.prev.result;
+        }
+  CreateItemFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Name: createItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      CodeS3Location: "./mapping-templates/Mutation.createItem.js"      
+  
+  UpdateItemPipelineResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Kind: PIPELINE
+      TypeName: Mutation
+      FieldName: updateItem
+      PipelineConfig:
+        Functions:
+          - !GetAtt UpdateItemFunction.FunctionId
+      Code: |
+        export function request(ctx) {
+          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
+          return {};
+        }
+        export function response(ctx) {
+          return ctx.prev.result;
+        }
+  UpdateItemFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Name: updateItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      CodeS3Location: "./mapping-templates/Mutation.updateItem.js"  
+
+  DeleteItemPipelineResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Kind: PIPELINE
+      TypeName: Mutation
+      FieldName: deleteItem
+      PipelineConfig:
+        Functions:
+          - !GetAtt DeleteItemFunction.FunctionId
+      Code: |
+        export function request(ctx) {
+          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
+          return {};
+        }
+        export function response(ctx) {
+          return ctx.prev.result;
+        }
+  DeleteItemFunction:
+    Type: AWS::AppSync::FunctionConfiguration
+    Properties:
+      ApiId: !GetAtt AppSyncApi.ApiId
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      Name: deleteItem
+      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+      CodeS3Location: "./mapping-templates/Mutation.deleteItem.js" 
+
+Outputs:
+  AppSyncApiGraphQLUrl:
+    Description: The URL to the Javascript Pipeline Resolvers AppSync Api Endpoint
+    Value: !GetAtt AppSyncApi.GraphQLUrl
+  AppSyncApiKey:
+    Description: Javascript Pipeline Resolvers AppSync Api  Key
+    Value: !GetAtt AppSyncApiKey.ApiKey

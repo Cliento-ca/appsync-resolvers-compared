@@ -22,7 +22,7 @@ afterAll(async () => {
 
 describe(`When we invoke the create item mutation`, () => {
 	it(`Should return the item for that id`, async () => {
-		const stuff = 'struff';
+		const stuff = 'stuff';
 		item = await when.we_invoke_create_item(stuff);
 
 		expect(item).toBeDefined();

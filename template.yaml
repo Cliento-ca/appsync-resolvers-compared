@@ -18,16 +18,14 @@ Resources:
           Parameters:
             ItemsTableName: !Ref ItemsTable
             ItemsTableArn: !GetAtt ItemsTable.Arn
-    # JavascriptPipelineResolvers:
-    #    Type: AWS::Serverless::Application
-    #    Properties:
-    #       Location: 3-javascript-pipeline-resolvers/template.yaml
-    #       Parameters:
-    #         AppSyncApiId: !GetAtt AppSyncApi.ApiId
-    #         ItemsTableName: !Ref ItemsTable
-    #         ItemsTableArn: !GetAtt ItemsTable.Arn                   
-                    
-         
+    
+    JavascriptPipelineResolvers:
+       Type: AWS::Serverless::Application
+       Properties:
+          Location: 3-javascript-pipeline-resolvers/template.yaml
+          Parameters:
+            ItemsTableName: !Ref ItemsTable
+            ItemsTableArn: !GetAtt ItemsTable.Arn                   
          
     ItemsTable:
         Type: AWS::DynamoDB::Table
