@@ -1,113 +1,120 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Transform: "AWS::Serverless-2016-10-31"
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
 
 Parameters:
-  ItemsTableName:
-    Type: String
-    Description: Items table name 
-  ItemsTableArn:
-    Type: String
-    Description: Items table ARN
+    ItemsTableName:
+        Type: String
+        Description: Items table name
+    ItemsTableArn:
+        Type: String
+        Description: Items table ARN
+    AppSyncToCloudwatchLogsRoleArn:
+        Type: String
+        Description: AppSync to Cloudwatch log Role ARN
 
 Resources:
-  AppSyncApi:
-    Type: AWS::AppSync::GraphQLApi
-    Properties:
-      Name: VTL Resolvers AppSync Api
-      AuthenticationType: API_KEY
+    AppSyncApi:
+        Type: AWS::AppSync::GraphQLApi
+        Properties:
+            Name: VTL Resolvers AppSync Api
+            AuthenticationType: API_KEY
+            LogConfig:
+                CloudWatchLogsRoleArn: !Ref AppSyncToCloudwatchLogsRoleArn
+                FieldLogLevel: ERROR
+            XrayEnabled: true
 
-  AppSyncApiKey:
-    Type: AWS::AppSync::ApiKey
-    Properties:
-      ApiId: !GetAtt AppSyncApi.ApiId
+    AppSyncApiKey:
+        Type: AWS::AppSync::ApiKey
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
 
-  ApiSchema:
-    Type: AWS::AppSync::GraphQLSchema
-    Properties:
-      ApiId: !GetAtt AppSyncApi.ApiId
-      DefinitionS3Location: "../graphql/schema.graphql" 
-  
-  DynamoDBRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - sts:AssumeRole
-            Principal:
-              Service:
-                - appsync.amazonaws.com
-      Policies:
-        - PolicyName: DDBAccess
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                  - dynamodb:DeleteItem
-                Resource: !Ref ItemsTableArn
+    ApiSchema:
+        Type: AWS::AppSync::GraphQLSchema
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            DefinitionS3Location: '../graphql/schema.graphql'
 
-  AppSyncItemsTableDataSource:
-    Type: AWS::AppSync::DataSource
-    Properties:
-      Name: ItemsDataSource
-      ApiId: !GetAtt AppSyncApi.ApiId
-      Description: The Items Table AppSync Data Source
-      Type: AMAZON_DYNAMODB
-      ServiceRoleArn: !GetAtt DynamoDBRole.Arn
-      DynamoDBConfig:
-        TableName: !Ref ItemsTableName
-        AwsRegion: !Sub ${AWS::Region}
+    DynamoDBRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - appsync.amazonaws.com
+            Policies:
+                - PolicyName: DDBAccess
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - dynamodb:GetItem
+                                - dynamodb:PutItem
+                                - dynamodb:UpdateItem
+                                - dynamodb:DeleteItem
+                            Resource: !Ref ItemsTableArn
 
-  GetItemQueryResolver:
-    Type: AWS::AppSync::Resolver
-    Properties:
-      ApiId: !GetAtt AppSyncApi.ApiId
-      TypeName: Query
-      FieldName: getItem
-      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-      RequestMappingTemplateS3Location: "./mapping-templates/Query.getItem.request.vtl"
-      ResponseMappingTemplateS3Location: "./mapping-templates/Query.getItem.response.vtl"
+    AppSyncItemsTableDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Name: ItemsDataSource
+            ApiId: !GetAtt AppSyncApi.ApiId
+            Description: The Items Table AppSync Data Source
+            Type: AMAZON_DYNAMODB
+            ServiceRoleArn: !GetAtt DynamoDBRole.Arn
+            DynamoDBConfig:
+                TableName: !Ref ItemsTableName
+                AwsRegion: !Sub ${AWS::Region}
 
-  CreateItemMutationResolver:
-    Type: AWS::AppSync::Resolver
-    Properties:
-      ApiId: !GetAtt AppSyncApi.ApiId
-      TypeName: Mutation
-      FieldName: createItem
-      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-      RequestMappingTemplateS3Location: "./mapping-templates/Mutation.createItem.request.vtl"
-      ResponseMappingTemplateS3Location: "./mapping-templates/Mutation.createItem.response.vtl"
+    GetItemQueryResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            TypeName: Query
+            FieldName: getItem
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            RequestMappingTemplateS3Location: './mapping-templates/Query.getItem.request.vtl'
+            ResponseMappingTemplateS3Location: './mapping-templates/Query.getItem.response.vtl'
 
-  UpdateItemMutationResolver:
-    Type: AWS::AppSync::Resolver
-    Properties:
-      ApiId: !GetAtt AppSyncApi.ApiId
-      TypeName: Mutation
-      FieldName: updateItem
-      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-      RequestMappingTemplateS3Location: "./mapping-templates/Mutation.updateItem.request.vtl"
-      ResponseMappingTemplateS3Location: "./mapping-templates/Mutation.updateItem.response.vtl"    
+    CreateItemMutationResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            TypeName: Mutation
+            FieldName: createItem
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            RequestMappingTemplateS3Location: './mapping-templates/Mutation.createItem.request.vtl'
+            ResponseMappingTemplateS3Location: './mapping-templates/Mutation.createItem.response.vtl'
 
-  DeleteItemMutationResolver:
-    Type: AWS::AppSync::Resolver
-    Properties:
-      ApiId: !GetAtt AppSyncApi.ApiId
-      TypeName: Mutation
-      FieldName: deleteItem
-      DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-      RequestMappingTemplateS3Location: "./mapping-templates/Mutation.deleteItem.request.vtl"
-      ResponseMappingTemplateS3Location: "./mapping-templates/Mutation.deleteItem.response.vtl"
+    UpdateItemMutationResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            TypeName: Mutation
+            FieldName: updateItem
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            RequestMappingTemplateS3Location: './mapping-templates/Mutation.updateItem.request.vtl'
+            ResponseMappingTemplateS3Location: './mapping-templates/Mutation.updateItem.response.vtl'
+
+    DeleteItemMutationResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            TypeName: Mutation
+            FieldName: deleteItem
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            RequestMappingTemplateS3Location: './mapping-templates/Mutation.deleteItem.request.vtl'
+            ResponseMappingTemplateS3Location: './mapping-templates/Mutation.deleteItem.response.vtl'
 
 Outputs:
-  AppSyncApiGraphQLUrl:
-    Description: The URL to the VTL Resolvers AppSync Api Endpoint
-    Value: !GetAtt AppSyncApi.GraphQLUrl
-  AppSyncApiKey:
-    Description: VTL Resolvers AppSync Api Key
-    Value: !GetAtt AppSyncApiKey.ApiKey
+    AppSyncApiGraphQLUrl:
+        Description: The URL to the VTL Resolvers AppSync Api Endpoint
+        Value: !GetAtt AppSyncApi.GraphQLUrl
+    AppSyncApiKey:
+        Description: VTL Resolvers AppSync Api Key
+        Value: !GetAtt AppSyncApiKey.ApiKey

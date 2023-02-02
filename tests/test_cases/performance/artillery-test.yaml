@@ -1,0 +1,74 @@
+config:
+    phases:
+        - name: 1 VUs/sec for 10 sec
+          duration: 10
+          arrivalRate: 1
+        # - name: Warm up, 5 VUs/sec for 1 min
+        #   duration: 60
+        #   arrivalRate: 5
+        # - name: Ramp up load, 5 VUs/sec for 2 mins, up to 50 VUs
+        #   duration: 120
+        #   arrivalRate: 5
+        #   rampTo: 50
+        # - name: Sustained load, 50 VUs/sec for 10 mins.
+        #   duration: 600
+        #   arrivalRate: 50
+    plugins:
+        ensure: {}
+        expect: {}
+    ensure:
+        maxErrorRate: 0
+        p95: 250
+scenarios:
+    - name: CRUD Item
+      flow:
+          - log: 'Current environment is set to: {{ ENV }}'
+          - post:
+                headers:
+                    x-api-key: '{{ API_KEY }}'
+                url: '/'
+                json:
+                    query: 'mutation createItem($input: CreateItemInput) { createItem(input: $input) {id, stuff}}'
+                    variables:
+                        input:
+                            stuff: 'test-artillery-stuff'
+                expect:
+                    - statusCode: 200
+                capture:
+                    - json: '$.data.createItem.id'
+                      as: id
+          - post:
+                headers:
+                    x-api-key: '{{ API_KEY }}'
+                url: '/'
+                json:
+                    query: 'query getItem($id: ID!) { getItem(id: $id) { id, stuff } }'
+                    variables:
+                        id: '{{ id }}'
+                expect:
+                    - statusCode: 200
+          - post:
+                headers:
+                    x-api-key: '{{ API_KEY }}'
+                url: '/'
+                json:
+                    query: 'mutation updateItem($input: UpdateItemInput!) { updateItem(input: $input) { id, stuff } }'
+                    variables:
+                        input:
+                            id: '{{ id }}'
+                            stuff: 'test-artillery-stuff-updated'
+                expect:
+                    - statusCode: 200
+                capture:
+                    - json: '$.data.updateItem.id'
+                      as: id
+          - post:
+                headers:
+                    x-api-key: '{{ API_KEY }}'
+                url: '/'
+                json:
+                    query: 'mutation deleteItem($id: ID!) { deleteItem(id: $id) { id } }'
+                    variables:
+                        id: '{{ id }}'
+                expect:
+                    - statusCode: 200

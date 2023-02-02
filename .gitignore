@@ -5,3 +5,4 @@ node_modules
 samconfig.toml
 .env
 .VSCodeCounter
+.report/

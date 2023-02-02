@@ -8,6 +8,9 @@ Parameters:
   ItemsTableArn:
     Type: String
     Description: Items table ARN
+  AppSyncToCloudwatchLogsRoleArn:
+    Type: String
+    Description: AppSync to Cloudwatch log Role ARN  
 
 Resources:
   AppSyncApi:
@@ -15,6 +18,10 @@ Resources:
     Properties:
       Name: Javascript Pipeline Resolvers AppSync Api
       AuthenticationType: API_KEY
+      LogConfig: 
+        FieldLogLevel: ERROR
+        CloudWatchLogsRoleArn: !Ref AppSyncToCloudwatchLogsRoleArn
+      XrayEnabled: true  
 
   AppSyncApiKey:
     Type: AWS::AppSync::ApiKey
@@ -79,7 +86,6 @@ Resources:
           - !GetAtt GetItemFunction.FunctionId
       Code: |
         export function request(ctx) {
-          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
           return {};
         }
         export function response(ctx) {
@@ -111,7 +117,6 @@ Resources:
           - !GetAtt CreateItemFunction.FunctionId
       Code: |
         export function request(ctx) {
-          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
           return {};
         }
         export function response(ctx) {
@@ -143,7 +148,6 @@ Resources:
           - !GetAtt UpdateItemFunction.FunctionId
       Code: |
         export function request(ctx) {
-          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
           return {};
         }
         export function response(ctx) {
@@ -175,7 +179,6 @@ Resources:
           - !GetAtt DeleteItemFunction.FunctionId
       Code: |
         export function request(ctx) {
-          ctx.stash.TOPIC_ARN = '${topic.topicArn}'
           return {};
         }
         export function response(ctx) {

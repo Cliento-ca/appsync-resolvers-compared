@@ -1,46 +1,74 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: appsync-resolvers-compared
 
 Resources:
     LambdaResolvers:
-       Type: AWS::Serverless::Application
-       Properties:
-          Location: 1-lambda-resolvers/template.yaml
-          Parameters:
-            ItemsTableName: !Ref ItemsTable
-            ItemsTableArn: !GetAtt ItemsTable.Arn
-    
+        Type: AWS::Serverless::Application
+        Properties:
+            Location: 1-lambda-resolvers/template.yaml
+            Parameters:
+                ItemsTableName: !Ref ItemsTable
+                ItemsTableArn: !GetAtt ItemsTable.Arn
+                AppSyncToCloudwatchLogsRoleArn: !GetAtt AppSyncToCloudwatchLogsRole.Arn
+
     VTLResolvers:
-       Type: AWS::Serverless::Application
-       Properties:
-          Location: 2-vtl-resolvers/template.yaml
-          Parameters:
-            ItemsTableName: !Ref ItemsTable
-            ItemsTableArn: !GetAtt ItemsTable.Arn
-    
+        Type: AWS::Serverless::Application
+        Properties:
+            Location: 2-vtl-resolvers/template.yaml
+            Parameters:
+                ItemsTableName: !Ref ItemsTable
+                ItemsTableArn: !GetAtt ItemsTable.Arn
+                AppSyncToCloudwatchLogsRoleArn: !GetAtt AppSyncToCloudwatchLogsRole.Arn
+
     JavascriptPipelineResolvers:
-       Type: AWS::Serverless::Application
-       Properties:
-          Location: 3-javascript-pipeline-resolvers/template.yaml
-          Parameters:
-            ItemsTableName: !Ref ItemsTable
-            ItemsTableArn: !GetAtt ItemsTable.Arn                   
-         
+        Type: AWS::Serverless::Application
+        Properties:
+            Location: 3-javascript-pipeline-resolvers/template.yaml
+            Parameters:
+                ItemsTableName: !Ref ItemsTable
+                ItemsTableArn: !GetAtt ItemsTable.Arn
+                AppSyncToCloudwatchLogsRoleArn: !GetAtt AppSyncToCloudwatchLogsRole.Arn
+
     ItemsTable:
         Type: AWS::DynamoDB::Table
         Properties:
-          TableName: !Sub ${AWS::StackName}-items-table
-          AttributeDefinitions:
-            - AttributeName: id
-              AttributeType: S
-          KeySchema:
-            - AttributeName: id
-              KeyType: HASH
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
+            TableName: !Sub ${AWS::StackName}-items-table
+            AttributeDefinitions:
+                - AttributeName: id
+                  AttributeType: S
+            KeySchema:
+                - AttributeName: id
+                  KeyType: HASH
+            ProvisionedThroughput:
+                ReadCapacityUnits: 1
+                WriteCapacityUnits: 1
+
+    AppSyncToCloudwatchLogsRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - appsync.amazonaws.com
+            Path: /
+            Policies:
+                - PolicyName: AppsyncRolePolicy
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - logs:CreateLogGroup
+                                - logs:CreateLogStream
+                                - logs:PutLogEvents
+                            Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/*:*
 
 Outputs:
-  ItemsTableName:
-    Value: !Ref ItemsTable
+    ItemsTableName:
+        Value: !Ref ItemsTable
