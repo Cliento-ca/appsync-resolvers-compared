@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+    ItemsTableName:
+        Type: String
+        Description: Items table name
+    ItemsTableArn:
+        Type: String
+        Description: Items table ARN
+    AppSyncToCloudwatchLogsRoleArn:
+        Type: String
+        Description: AppSync to Cloudwatch log Role ARN
+
+Resources:
+    AppSyncApi:
+        Type: AWS::AppSync::GraphQLApi
+        Properties:
+            Name: Javascript Unit Resolvers AppSync Api
+            AuthenticationType: API_KEY
+            LogConfig:
+                FieldLogLevel: ERROR
+                CloudWatchLogsRoleArn: !Ref AppSyncToCloudwatchLogsRoleArn
+            XrayEnabled: true
+
+    AppSyncApiKey:
+        Type: AWS::AppSync::ApiKey
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+
+    ApiSchema:
+        Type: AWS::AppSync::GraphQLSchema
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            DefinitionS3Location: '../graphql/schema.graphql'
+
+    DynamoDBRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - sts:AssumeRole
+                      Principal:
+                          Service:
+                              - appsync.amazonaws.com
+            Policies:
+                - PolicyName: DDBAccess
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - dynamodb:GetItem
+                                - dynamodb:PutItem
+                                - dynamodb:UpdateItem
+                                - dynamodb:DeleteItem
+                            Resource: !Ref ItemsTableArn
+
+    AppSyncItemsTableDataSource:
+        Type: AWS::AppSync::DataSource
+        Properties:
+            Name: ItemsDataSource
+            ApiId: !GetAtt AppSyncApi.ApiId
+            Description: The Items Table AppSync Data Source
+            Type: AMAZON_DYNAMODB
+            ServiceRoleArn: !GetAtt DynamoDBRole.Arn
+            DynamoDBConfig:
+                TableName: !Ref ItemsTableName
+                AwsRegion: !Sub ${AWS::Region}
+
+    GetItemUnitResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            Runtime:
+                Name: APPSYNC_JS
+                RuntimeVersion: 1.0.0
+            Kind: UNIT
+            TypeName: Query
+            FieldName: getItem
+
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            CodeS3Location: './mapping-templates/Query.getItem.js'
+
+    CreateItemUnitResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            Runtime:
+                Name: APPSYNC_JS
+                RuntimeVersion: 1.0.0
+            Kind: UNIT
+            TypeName: Mutation
+            FieldName: createItem
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            CodeS3Location: './mapping-templates/Mutation.createItem.js'
+
+    UpdateItemUnitResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            Runtime:
+                Name: APPSYNC_JS
+                RuntimeVersion: 1.0.0
+            Kind: UNIT
+            TypeName: Mutation
+            FieldName: updateItem
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            CodeS3Location: './mapping-templates/Mutation.updateItem.js'
+
+    DeleteItemUnitResolver:
+        Type: AWS::AppSync::Resolver
+        Properties:
+            ApiId: !GetAtt AppSyncApi.ApiId
+            Runtime:
+                Name: APPSYNC_JS
+                RuntimeVersion: 1.0.0
+            Kind: UNIT
+            TypeName: Mutation
+            FieldName: deleteItem
+            DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
+            CodeS3Location: './mapping-templates/Mutation.deleteItem.js'
+
+Outputs:
+    AppSyncApiGraphQLUrl:
+        Description: The URL to the Javascript Unit Resolvers AppSync Api Endpoint
+        Value: !GetAtt AppSyncApi.GraphQLUrl
+    AppSyncApiKey:
+        Description: Javascript Unit Resolvers AppSync Api  Key
+        Value: !GetAtt AppSyncApiKey.ApiKey

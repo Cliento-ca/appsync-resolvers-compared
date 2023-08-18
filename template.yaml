@@ -30,6 +30,15 @@ Resources:
                 ItemsTableArn: !GetAtt ItemsTable.Arn
                 AppSyncToCloudwatchLogsRoleArn: !GetAtt AppSyncToCloudwatchLogsRole.Arn
 
+    JavascriptUnitResolvers:
+        Type: AWS::Serverless::Application
+        Properties:
+            Location: 4-javascript-unit-resolvers/template.yaml
+            Parameters:
+                ItemsTableName: !Ref ItemsTable
+                ItemsTableArn: !GetAtt ItemsTable.Arn
+                AppSyncToCloudwatchLogsRoleArn: !GetAtt AppSyncToCloudwatchLogsRole.Arn
+
     ItemsTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -70,3 +79,11 @@ Resources:
 Outputs:
     ItemsTableName:
         Value: !Ref ItemsTable
+    JavascriptPipelineAppSyncApiUrl:
+        Value: !GetAtt JavascriptPipelineResolvers.Outputs.AppSyncApiGraphQLUrl
+    JavascriptPipelineAppSyncApiKey:
+        Value: !GetAtt JavascriptPipelineResolvers.Outputs.AppSyncApiKey
+    JavascriptUnitAppSyncApiUrl:
+        Value: !GetAtt JavascriptUnitResolvers.Outputs.AppSyncApiGraphQLUrl
+    JavascriptUnitAppSyncApiKey:
+        Value: !GetAtt JavascriptUnitResolvers.Outputs.AppSyncApiKey
