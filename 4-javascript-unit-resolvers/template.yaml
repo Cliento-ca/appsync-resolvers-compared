@@ -83,7 +83,7 @@ Resources:
             FieldName: getItem
 
             DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-            CodeS3Location: './mapping-templates/Query.getItem.js'
+            CodeS3Location: './mapping-templates/Query.getItem.ts'
 
     CreateItemUnitResolver:
         Type: AWS::AppSync::Resolver
@@ -96,7 +96,7 @@ Resources:
             TypeName: Mutation
             FieldName: createItem
             DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-            CodeS3Location: './mapping-templates/Mutation.createItem.js'
+            CodeS3Location: './mapping-templates/Mutation.createItem.ts'
 
     UpdateItemUnitResolver:
         Type: AWS::AppSync::Resolver
@@ -109,7 +109,7 @@ Resources:
             TypeName: Mutation
             FieldName: updateItem
             DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-            CodeS3Location: './mapping-templates/Mutation.updateItem.js'
+            CodeS3Location: './mapping-templates/Mutation.updateItem.ts'
 
     DeleteItemUnitResolver:
         Type: AWS::AppSync::Resolver
@@ -122,7 +122,7 @@ Resources:
             TypeName: Mutation
             FieldName: deleteItem
             DataSourceName: !GetAtt AppSyncItemsTableDataSource.Name
-            CodeS3Location: './mapping-templates/Mutation.deleteItem.js'
+            CodeS3Location: './mapping-templates/Mutation.deleteItem.ts'
 
 Outputs:
     AppSyncApiGraphQLUrl:
