@@ -1,6 +1,6 @@
-import { util } from '@aws-appsync/utils';
-
-export function request(ctx) {
+import { util, Context } from '@aws-appsync/utils';
+import { GetItemQueryVariables, Item } from '../../graphql/src/API';
+export function request(ctx: Context<GetItemQueryVariables>) {
 	const { id } = ctx.args;
 	return {
 		operation: 'GetItem',
@@ -9,6 +9,6 @@ export function request(ctx) {
 	};
 }
 
-export function response(ctx) {
+export function response(ctx: Context) {
 	return ctx.result;
 }

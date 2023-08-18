@@ -1,6 +1,7 @@
-import { util } from '@aws-appsync/utils';
+import { Context, util } from '@aws-appsync/utils';
+import { UpdateItemMutationVariables } from '../../graphql/src/API';
 
-export function request(ctx) {
+export function request(ctx: Context<UpdateItemMutationVariables>) {
 	const { id, stuff } = ctx.args.input;
 	return {
 		operation: 'UpdateItem',
@@ -15,6 +16,6 @@ export function request(ctx) {
 	};
 }
 
-export function response(ctx) {
+export function response(ctx: Context) {
 	return ctx.result;
 }
